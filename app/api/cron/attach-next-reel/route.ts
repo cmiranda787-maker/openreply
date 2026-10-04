@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { attachPendingNextReels } from "@/lib/automation/attach-next-reel";
 
+
 /**
  * Binds "next reel" campaigns to a real post.
  *
@@ -11,18 +12,24 @@ import { attachPendingNextReels } from "@/lib/automation/attach-next-reel";
  * cron interval of the reel being posted.
  */
 
+
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET || process.env.NEXTAUTH_SECRET;
 
-  if (authHeader !== `Bearer ${cronSecret}`) {
+
+  // Fail closed: reject everything when no secret is configured, so a
+  // missing secret can never be satisfied by `Bearer undefined`.
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json(
       { success: false, error: "Unauthorized" },
       { status: 401 }
     );
   }
 
+
   const result = await attachPendingNextReels();
+
 
   return NextResponse.json({
     success: true,
